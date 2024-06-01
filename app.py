@@ -32,7 +32,8 @@ def home_page():
             
     else:
        st.divider()
-       st.markdown("<h5 style='text-align:center;'>Tidak ada dokumen yang tersimpan.</h5>", unsafe_allow_html=True)
+       st.warning("Tidak ada dokumen yang tersimpan.")
+
 
     st.divider()
     if st.button("Tambah Dokumen Baru"):
@@ -110,7 +111,6 @@ def similarity_page():
     
     if num_samples > 2:
         num_clusters = st.number_input("Jumlah Cluster", min_value=2, max_value=num_samples-1, value=2, step=1)
-
     
     st.markdown("<h5 style='text-align:center;", unsafe_allow_html=True)
 
