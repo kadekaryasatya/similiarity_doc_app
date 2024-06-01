@@ -56,7 +56,20 @@ def pdf_to_text(file):
         text += page.get_text()
     return text
 
+import re
+
+import re
+
 def extract_title(text):
-    lines = text.split('\n')
-    title = lines[0].strip() if lines else "Judul Tidak Ditemukan"
+    title_pattern = r'(?:Peraturan|Undang-Undang)\s+[A-Za-z0-9\s\-/,.()]+'
+    title_match = re.search(title_pattern, text)
+    
+    if title_match:
+        title = title_match.group().strip()
+        title_words = title.split()
+        if len(title_words) > 8:
+            title = ' '.join(title_words[:8]) 
+    else:
+        title = "Judul Tidak Ditemukan"
+    
     return title

@@ -95,7 +95,8 @@ def similarity_page():
     
     if num_samples < 2:
         st.warning("Untuk Menghitung Keterkaitan, diperlukan setidaknya 2 dokumen.")
-        st.write("Silakan tambahkan dokumen lebih dari 1.")
+        st.divider()
+
         if st.button("Tambah Dokumen Baru"):
            st.session_state.page = 'input'
         return
@@ -106,14 +107,13 @@ def similarity_page():
         doc['topik_peraturan'] + " " + doc['struktur_peraturan']
         for doc in documents
     ]    
-    min_clusters = 2
-    max_clusters = min(2, num_samples - 1)  # Update the maximum clusters
     
-    if num_samples == 2:
-        num_clusters = 2
-    else:
-        num_clusters = st.number_input("Jumlah Cluster", min_value=min_clusters, max_value=max_clusters, value=min_clusters, step=1)
-        
+    if num_samples > 2:
+        num_clusters = st.number_input("Jumlah Cluster", min_value=2, max_value=num_samples-1, value=2, step=1)
+
+    
+    st.markdown("<h5 style='text-align:center;", unsafe_allow_html=True)
+
     if st.button("Hitung Keterkaitan"):
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(contents)
@@ -133,22 +133,26 @@ def similarity_page():
         similarity_df = pd.DataFrame(similarity_data)
         styler = similarity_df.style.set_properties(**{'text-align': 'center'}).format({'Keterkaitan': "{:.4f}"}).hide(axis='index')
         st.write(styler.to_html(), unsafe_allow_html=True)
-        
-        st.divider()
-        silhouette_avg, labels = perform_clustering(similarity_matrix, num_clusters)
-        st.write(f"Silhouette Coefficient: {silhouette_avg}")
 
+        st.divider()
+        
         st.header("Hasil Clustering:")
 
-        cluster_data = {f"Cluster {i + 1}": [] for i in range(num_clusters)}
-        for cluster_id in range(num_clusters):
-            cluster_docs = [documents[i]['title'] for i, label in enumerate(labels) if label == cluster_id]
-            cluster_data[f"Cluster {cluster_id + 1}"] = cluster_docs
-        
-        cluster_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in cluster_data.items()])).fillna('')
-        
-        cluster_styler = cluster_df.style.set_properties(**{'text-align': 'center'}).hide(axis='index')
-        st.write(cluster_styler.to_html(), unsafe_allow_html=True)
+        if num_samples == 2:
+            st.warning("Clustering tidak dapat dilakukan dengan hanya dua dokumen. Silakan tambahkan lebih banyak dokumen.")
+            st.divider()
+        else:
+            silhouette_avg, labels = perform_clustering(similarity_matrix, num_clusters)
+            st.write(f"Silhouette Coefficient: {silhouette_avg}")
+            cluster_data = {f"Cluster {i + 1}": [] for i in range(num_clusters)}
+            for cluster_id in range(num_clusters):
+                cluster_docs = [documents[i]['title'] for i, label in enumerate(labels) if label == cluster_id]
+                cluster_data[f"Cluster {cluster_id + 1}"] = cluster_docs
+            
+            cluster_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in cluster_data.items()])).fillna('')
+            
+            cluster_styler = cluster_df.style.set_properties(**{'text-align': 'center'}).hide(axis='index')
+            st.write(cluster_styler.to_html(), unsafe_allow_html=True)
 
 def navigation():
     st.sidebar.title("Navigasi")
