@@ -6,8 +6,8 @@ from preprocessing import preprocess_text,extract_details, pdf_to_text, extract_
 from clustering import perform_clustering
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-st.set_page_config(page_title="Similiarity Apps",
-                   page_icon="📈", layout="wide")
+st.set_page_config(page_title="Similarity Docs Apps",
+                   page_icon="📃", layout="wide")
 
 def home_page():
     st.title("Sistem Analisa Tingkat Keterkaitan Antara Naskah Peraturan")
@@ -84,6 +84,7 @@ def input_document_page():
         title = title_input.strip() if title_input else extract_title(content)
         if st.button("Simpan"):
             preprocessed_content = preprocess_text(content)
+            st.write(preprocessed_content)
             details_content = extract_details(preprocessed_content)
             save_document(title, details_content)
             st.success("Dokumen berhasil disimpan!")
@@ -160,8 +161,8 @@ def navigation():
         st.session_state.page = 'home'
     if st.sidebar.button("Input Dokumen"):
         st.session_state.page = 'input'
-    if st.sidebar.button("Similiarity"):
-        st.session_state.page = 'similiarity'
+    if st.sidebar.button("Similarity"):
+        st.session_state.page = 'similarity'
         
 
 def main():
@@ -174,7 +175,7 @@ def main():
         home_page()
     elif st.session_state.page == 'input':
         input_document_page()
-    elif st.session_state.page == 'similiarity':
+    elif st.session_state.page == 'similarity':
         similarity_page()
     elif st.session_state.page == 'view':
         view_document_page()
