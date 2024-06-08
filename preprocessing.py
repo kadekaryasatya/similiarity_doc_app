@@ -83,6 +83,7 @@ def extract_details(text):
     "Judul": judul,
     "Pembukaan": r'(Dengan Rahmat Tuhan Yang Maha Esa.*?)(?=Menimbang)',
     "Batang Tubuh": konten_penimbang + "\n\n" + peraturan_terkait + "\n\n" + konten_peraturan,
+    "Penjelasan": r'(Penjelasan atas.*?)(?=Ditetapkan Di)',
     "Penutup": r'(?:Ditetapkan Di).*?(?=Lampiran|$)',
     "Lampiran": r'(Lampiran.*?$)'
 }
