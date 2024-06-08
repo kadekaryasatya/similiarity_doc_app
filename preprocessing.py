@@ -13,12 +13,6 @@ def preprocess_text(text):
     
     clean_tokens = [word for word in word_tokens if word.isalnum()]
 
-    # clean_tokens = [word for word in word_tokens ]
-    
-    # filtered_text = [word for word in clean_tokens if word.lower() not in stop_words]
-
-    # filtered_text = [word for word in clean_tokens if word.lower()]
-
     filtered_text = [word.lower() for word in clean_tokens if word.lower()]
 
     cleaned_text = " ".join(filtered_text)
@@ -30,9 +24,16 @@ def extract_details(text):
     pemrakarsa_match = re.search(pemrakarsa_pattern, text, re.IGNORECASE)
     pemrakarsa = pemrakarsa_match.group(0).strip() if pemrakarsa_match else "Pemrakarsa tidak ditemukan"
     
-    level_peraturan_pattern = r'\b(?:Undang-Undang Dasar 1945|Ketetapan Majelis MPR|Undang-Undang|Peraturan Pemerintah Pengganti Undang-Undang|Peraturan Pemerintah|Keputusan Presiden|Peraturan Menteri|Peraturan Gubernur| Peraturan Bupati)\b'
+    level_peraturan_pattern = r'\b(?:Undang-Undang Dasar 1945|Ketetapan Majelis Permusyawaratan Rakyat|Undang-Undang|Peraturan Pemerintah Pengganti Undang-Undang|Peraturan Pemerintah|Keputusan Presiden|Peraturan Menteri|Peraturan Gubernur|Peraturan Bupati)\b'
     level_peraturan_match = re.search(level_peraturan_pattern, text, re.IGNORECASE)
-    level_peraturan = level_peraturan_match.group(0).strip() if level_peraturan_match else "Level Peraturan tidak ditemukan"
+    if level_peraturan_match:
+        level_peraturan = level_peraturan_match.group(0).strip()
+        if level_peraturan.lower() == "peraturan gubernur":
+            level_peraturan = "peraturan daerah provinsi"
+        elif level_peraturan.lower() == "peraturan bupati":
+            level_peraturan = "peraturan daerah kabupaten/Kota"
+    else:
+        level_peraturan = "Level Peraturan tidak ditemukan"
 
     penimbang_pattern = r'Menimbang\s*(.*?)(?=Mengingat|$)'
     penimbang_match = re.search(penimbang_pattern, text, re.DOTALL| re.IGNORECASE)
@@ -45,10 +46,6 @@ def extract_details(text):
     konten_peraturan_pattern = r'Memutuskan\s*(.*?)$'
     konten_peraturan_match = re.search(konten_peraturan_pattern, text, re.IGNORECASE | re.DOTALL)
     konten_peraturan = (konten_peraturan_match.group(1)[:255]).strip() if konten_peraturan_match else "Konten peraturan tidak ditemukan"
-
-    # kategori_peraturan_pattern = r'KATEGORI\s*:\s*(.*?)\s*\n'
-    # kategori_peraturan_match = re.search(kategori_peraturan_pattern, text)
-    # kategori_peraturan = kategori_peraturan_match.group(1).strip() if kategori_peraturan_match else "Kategori Peraturan tidak ditemukan"
 
     if level_peraturan == "Level Peraturan tidak ditemukan":
        kategori_peraturan = "peraturan biasa"
@@ -79,31 +76,33 @@ def extract_details(text):
 
     if topik_peraturan_text is None:
         topik_peraturan_text = "Topik tidak ditemukan"
+    
+    judul =  extract_title(text)
 
-
-    struktur_kata_kunci = {
-        "judul": ["peraturan", "nomor", "tahun"],
-        "pembukaan": ["dengan", "rahmat", "tuhan", "yang", "maha", "esa"],
-        "isi": ["menetapkan", "memutuskan", "menimbang", "mengingat"],
-        "penutup": ["ditetapkan", "diundangkan", "ttd"],
-    }
+    struktur_peraturan_pattern = {
+    "Judul": judul,
+    "Pembukaan": r'(Dengan Rahmat Tuhan Yang Maha Esa.*?)(?=Menimbang)',
+    "Batang Tubuh": konten_penimbang + "\n\n" + peraturan_terkait + "\n\n" + konten_peraturan,
+    "Penutup": r'(?:Ditetapkan Di).*?(?=Lampiran|$)',
+    "Lampiran": r'(Lampiran.*?$)'
+}
 
     struktur_peraturan = {}
 
-    for struktur, kata_kunci in struktur_kata_kunci.items():
-        ditemukan = False
-        for kata in kata_kunci:
-            if kata in text.lower():
-                struktur_peraturan[struktur] = kata
-                ditemukan = True
-                break
-        if not ditemukan:
-            struktur_peraturan[struktur] = "Tidak ditemukan"
+    for bagian, pola in struktur_peraturan_pattern.items():
+        if bagian == "Batang Tubuh":
+            struktur_peraturan[bagian] = pola
+        else:
+            matches = re.findall(pola, text, re.DOTALL | re.IGNORECASE)
+            if matches:
+                if bagian == "Lampiran":
+                    struktur_peraturan[bagian] = matches[-1].strip()
+                else:
+                    struktur_peraturan[bagian] = matches[0].strip()
+            else:
+                struktur_peraturan[bagian] = "Tidak ditemukan"
 
-    # struktur_peraturan_pattern = r'Pasal\s+\d+'
-    # struktur_peraturan_match = re.search(struktur_peraturan_pattern, text)
-    # struktur_peraturan = struktur_peraturan_match.group(0).strip() if struktur_peraturan_match else "Struktur Peraturan tidak ditemukan"
-
+    struktur_peraturan_mix = "\n\n".join([f"{bagian}: {konten}" for bagian, konten in struktur_peraturan.items()])
 
     return {
         "Pemrakarsa": pemrakarsa,
@@ -113,7 +112,7 @@ def extract_details(text):
         "Konten Peraturan": konten_peraturan,
         "Kategori Peraturan": kategori_peraturan,
         "Topik Peraturan": topik_peraturan_text,
-        "Struktur Peraturan": struktur_peraturan
+        "Struktur Peraturan": struktur_peraturan_mix
     }
     
 def pdf_to_text(file):
@@ -122,8 +121,6 @@ def pdf_to_text(file):
     for page in doc:
         text += page.get_text()
     return text
-
-import re
 
 def extract_title(text):
     title_pattern = r'\b(Peraturan|Undang-Undang)\b\s+[A-Za-z0-9\s\-/,.()]+'
