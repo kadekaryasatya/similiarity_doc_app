@@ -7,6 +7,7 @@ from nltk.chunk import ne_chunk
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+import re
 
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
@@ -17,7 +18,7 @@ nltk.download('stopwords')
 nltk.download('omw-1.4')
 
 def preprocess_text(text):
-    # stop_words = set(stopwords.words('indonesian'))
+    stop_words = set(stopwords.words('indonesian'))
 
     # Tokenisasi
     word_tokens = word_tokenize(text)
@@ -26,19 +27,16 @@ def preprocess_text(text):
     clean_tokens = [word for word in word_tokens if word.isalnum()]
 
     # Lowercase dan Menghapus stop words 
-    # filtered_text = [word.lower() for word in clean_tokens if word.lower() not in stop_words]
-
-    # Lowercase
-    filtered_text = [word.lower() for word in clean_tokens if word.lower()]
+    filtered_text = [word.lower() for word in clean_tokens if word.lower() not in stop_words]
 
     cleaned_text = " ".join(filtered_text)
     
     # Stemming
-    # factory = StemmerFactory()
-    # stemmer = factory.create_stemmer()
-    # stemmed_tokens = [stemmer.stem(word) for word in filtered_text]
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
+    stemmed_tokens = [stemmer.stem(word) for word in filtered_text]
 
-    # cleaned_text = " ".join(stemmed_tokens)
+    cleaned_text = " ".join(stemmed_tokens)
 
     return cleaned_text
 
@@ -74,11 +72,8 @@ def preprocess_text_new(text):
         lemmatized_tokens.append(lemmatizer.lemmatize(word, pos=wordnet_pos))
     
     # Lowercase ,Menghapus stop words dan token non-alfanumerik
-    # stop_words = set(stopwords.words('indonesian'))
-    # filtered_tokens = [word.lower() for word in lemmatized_tokens if word.isalnum() and word.lower() not in stop_words]
-
-    # Lowercase dan Menghapus token non-alfanumerik
-    filtered_tokens = [word.lower() for word in lemmatized_tokens if word.isalnum() and word.lower()]
+    stop_words = set(stopwords.words('indonesian'))
+    filtered_tokens = [word.lower() for word in lemmatized_tokens if word.isalnum() and word.lower() not in stop_words]
     
     # Chunking
     chunked = ne_chunk(pos_tag(filtered_tokens))
@@ -95,12 +90,19 @@ def preprocess_text_new(text):
     
     return processed_text
 
-
-
 def pdf_to_text(file):
     doc = fitz.open(stream=file.read(), filetype="pdf")
+    
     text = ""
     for page in doc:
         text += page.get_text()
-    return text
+    
+    word_tokens = word_tokenize(text)
+    
+    clean_tokens = [word for word in word_tokens if word.isalnum()]
 
+    filtered_text = [word for word in clean_tokens]
+
+    cleaned_text = " ".join(filtered_text)
+
+    return cleaned_text

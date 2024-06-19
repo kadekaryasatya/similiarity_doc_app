@@ -1,7 +1,6 @@
 import streamlit as st
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-# import gensim.downloader as api
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 
@@ -38,8 +37,8 @@ def calculate_similarity_word_count(documents):
     total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
 
     for col in columns:
-        contents = [" ".join(doc[col].split()) for doc in documents]  # Menggunakan jumlah kata dari teks yang dipisahkan
-        vectorizer = CountVectorizer()  # Menggunakan CountVectorizer untuk menghitung jumlah kata
+        contents = [" ".join(doc[col].split()) for doc in documents]  
+        vectorizer = CountVectorizer()  
         word_count_matrix = vectorizer.fit_transform(contents)
         similarity_matrix = cosine_similarity(word_count_matrix, word_count_matrix)
 

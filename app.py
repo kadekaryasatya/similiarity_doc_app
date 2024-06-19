@@ -85,27 +85,11 @@ def input_document_page():
     
     if uploaded_file is not None:
         content = pdf_to_text(uploaded_file)
-        preprocessed_content = preprocess_text(content)
-        title = extract_title(preprocessed_content)
+        # preprocessed_content = preprocess_text(content)
+        title = extract_title(content)
         if st.button("Simpan"):
-            st.write(preprocessed_content)
-            details_content = extract_details(preprocessed_content)
-            save_document(title, details_content)
-            st.success("Dokumen berhasil disimpan!")
-
-def input_document_page_new():
-    st.title("Tambah Dokumen Baru v2")
-
-    # title_input = st.text_input("Masukkan Judul Dokumen")
-    uploaded_file = st.file_uploader("Unggah File PDF", type="pdf")
-    
-    if uploaded_file is not None:
-        content = pdf_to_text(uploaded_file)
-        preprocessed_content = preprocess_text_new(content)
-        title = extract_title(preprocessed_content)
-        if st.button("Simpan"):
-            st.write(preprocessed_content)
-            details_content = extract_details(preprocessed_content)
+            st.write(content)
+            details_content = extract_details(content)
             save_document(title, details_content)
             st.success("Dokumen berhasil disimpan!")
 
@@ -123,6 +107,12 @@ def similarity_page():
             st.session_state.page = 'input'
         return
 
+    st.subheader("Pilih Metode Preprocessing:")
+    preprocessing_method = st.selectbox("Metode:", [
+        "1. Case Folding, Tokenizing, Filtering, Stemming",
+        "2. Part-of-Speech Tagging, Lemmatization, Term Generation, Chunking"
+    ])
+
     st.subheader("Pilih Metode Perhitungan:")
     similarity_method = st.selectbox("Metode:", ["TF-IDF", "Word Count", "N-Gram", "Bag of Words", "Word Embedding"])
 
@@ -139,17 +129,37 @@ def similarity_page():
         st.header("Nilai Keterkaitan Antar Naskah:")
         columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                    'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+        
+        if preprocessing_method.startswith("1."):
+            preprocess_function = preprocess_text
+        else:
+            preprocess_function = preprocess_text_new
+
+        preprocessed_documents = [
+            {
+                'title': doc['title'],
+                'pemrakarsa': preprocess_function(doc['pemrakarsa']),
+                'level_peraturan': preprocess_function(doc['level_peraturan']),
+                'konten_penimbang': preprocess_function(doc['konten_penimbang']),
+                'peraturan_terkait': preprocess_function(doc['peraturan_terkait']),
+                'konten_peraturan': preprocess_function(doc['konten_peraturan']),
+                'kategori_peraturan': preprocess_function(doc['kategori_peraturan']),
+                'topik_peraturan': preprocess_function(doc['topik_peraturan']),
+                'struktur_peraturan': preprocess_function(doc['struktur_peraturan'])
+            }
+            for doc in documents
+        ]
 
         if similarity_method == "TF-IDF":
-            similarity_data, total_similarity_data = calculate_similarity_tfidf(documents)
+            similarity_data, total_similarity_data = calculate_similarity_tfidf(preprocessed_documents)
         elif similarity_method == "Word Count":
-            similarity_data, total_similarity_data = calculate_similarity_word_count(documents)
+            similarity_data, total_similarity_data = calculate_similarity_word_count(preprocessed_documents)
         elif similarity_method == "N-Gram":
-            similarity_data, total_similarity_data = calculate_similarity_ngram(documents, n=n_value)
+            similarity_data, total_similarity_data = calculate_similarity_ngram(preprocessed_documents, n=n_value)
         elif similarity_method == "Bag of Words":
-            similarity_data, total_similarity_data = calculate_similarity_bow(documents)
+            similarity_data, total_similarity_data = calculate_similarity_bow(preprocessed_documents)
         else:
-            similarity_data, total_similarity_data = calculate_similarity_word_embedding(documents)
+            similarity_data, total_similarity_data = calculate_similarity_word_embedding(preprocessed_documents)
 
 
         for col in columns:
@@ -186,7 +196,7 @@ def similarity_page():
                 doc['pemrakarsa'] + " " + doc['level_peraturan'] + " " + doc['konten_penimbang'] + " " + 
                 doc['peraturan_terkait'] + " " + doc['konten_peraturan'] + " " + doc['kategori_peraturan'] + " " +
                 doc['topik_peraturan'] + " " + doc['struktur_peraturan']
-                for doc in documents
+                for doc in preprocessed_documents
             ]
 
             if similarity_method == "Word Embedding":
@@ -235,12 +245,9 @@ def navigation():
         st.session_state.page = 'home'
     if st.sidebar.button("Input Dokumen"):
         st.session_state.page = 'input'
-    if st.sidebar.button("Input Dokumen New"):
-        st.session_state.page = 'input_new'
     if st.sidebar.button("Similarity"):
         st.session_state.page = 'similarity'
         
-
 def main():
     if 'page' not in st.session_state:
         st.session_state.page = 'home'
@@ -251,8 +258,6 @@ def main():
         home_page()
     elif st.session_state.page == 'input':
         input_document_page()
-    elif st.session_state.page == 'input_new':
-        input_document_page_new()
     elif st.session_state.page == 'similarity':
         similarity_page()
     elif st.session_state.page == 'view':
