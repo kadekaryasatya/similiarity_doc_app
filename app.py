@@ -223,6 +223,7 @@ def similarity_page():
                 similarity_data4, total_similarity_data4 = similarity_methods[method_name](preprocessed_documents4)
                 similarity_data5, total_similarity_data5 = similarity_methods[method_name](preprocessed_documents5)
 
+                st.write('**case folding, tokenizing**')
                 # Similarity Metode 1
                 expander1 = st.expander(f"Similarity (case folding, tokenizing)")
                 with expander1:
@@ -299,6 +300,10 @@ def similarity_page():
 
                         st.divider()
                 
+                st.divider()
+
+                st.write('**case folding, tokenizing, stemming**')
+
                 # Similarity Metode 2
                 expander2 = st.expander(f"Similarity (case folding, tokenizing, stemming)")
                 with expander2:
@@ -375,6 +380,10 @@ def similarity_page():
 
                         st.divider()
 
+                st.divider()
+
+                st.write('**case folding, tokenizing, filtering**')
+
                 # Similarity Metode 3
                 expander3 = st.expander(f"Similarity (case folding, tokenizing, filtering)")
                 with expander3:
@@ -450,7 +459,11 @@ def similarity_page():
                         st.write(cluster_styler3.to_html(), unsafe_allow_html=True)
 
                         st.divider()
+
+                st.divider()
                 
+                st.write('**case folding, tokenizing, filtering, stemming**')
+
                 # Similarity Metode 4
                 expander4 = st.expander(f"Similarity (case folding, tokenizing, filtering, stemming)")
                 with expander4:
@@ -527,6 +540,10 @@ def similarity_page():
 
                         st.divider()
                 
+                st.divider()
+
+                st.write('**part of speech, lemmatization, chunking**')
+
                 # Similarity Metode 5
                 expander5 = st.expander(f"Similarity (part of speech, lemmatization, chunking)")
                 with expander5:
