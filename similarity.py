@@ -5,8 +5,108 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 
 
-
+# Tf-IDF
 def calculate_similarity_tfidf(documents):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# N-Gram
+def calculate_similarity_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = CountVectorizer(ngram_range=(1, n))
+        ngram_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(ngram_matrix, ngram_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Tf-IDF and N-Gram
+def calculate_similarity_tfidf_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = TfidfVectorizer(ngram_range=(1, n))
+        tfidf_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Count
+def calculate_similarity_word_count(documents):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = CountVectorizer()
+        word_count_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(word_count_matrix, word_count_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Count and Tf-IDF
+def calculate_similarity_word_count_tfidf(documents):
     columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
     similarity_data = {col: [] for col in columns}
@@ -30,17 +130,18 @@ def calculate_similarity_tfidf(documents):
 
     return similarity_data, total_similarity_data
 
-def calculate_similarity_word_count(documents):
+# Word Count and N-Gram
+def calculate_similarity_word_count_ngram(documents, n=1):
     columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
     similarity_data = {col: [] for col in columns}
     total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
 
     for col in columns:
-        contents = [" ".join(doc[col].split()) for doc in documents]  
-        vectorizer = CountVectorizer()  
-        word_count_matrix = vectorizer.fit_transform(contents)
-        similarity_matrix = cosine_similarity(word_count_matrix, word_count_matrix)
+        contents = [doc[col] for doc in documents]
+        vectorizer = CountVectorizer(ngram_range=(1, n))
+        ngram_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(ngram_matrix, ngram_matrix)
 
         for i in range(len(documents)):
             for j in range(i + 1, len(documents)):
@@ -54,8 +155,8 @@ def calculate_similarity_word_count(documents):
 
     return similarity_data, total_similarity_data
 
-
-def calculate_similarity_ngram(documents, n=2):
+# Word Count and Tf-IDF + N-Gram
+def calculate_similarity_word_count_tfidf_ngram(documents, n=1):
     columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
     similarity_data = {col: [] for col in columns}
@@ -63,35 +164,23 @@ def calculate_similarity_ngram(documents, n=2):
 
     for col in columns:
         contents = [doc[col] for doc in documents]
-        valid_contents = []
-        valid_indices = []
+        vectorizer = TfidfVectorizer(ngram_range=(1, n))
+        tfidf_ngram_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(tfidf_ngram_matrix, tfidf_ngram_matrix)
 
-        for idx, content in enumerate(contents):
-            if len(content.split()) >= n:
-                valid_contents.append(content)
-                valid_indices.append(idx)
-
-        if not valid_contents:
-            continue  # Skip if no valid contents
-
-        vectorizer = CountVectorizer(ngram_range=(n, n), stop_words=None)
-        ngram_matrix = vectorizer.fit_transform(valid_contents)
-        similarity_matrix = cosine_similarity(ngram_matrix, ngram_matrix)
-
-        for i, idx_i in enumerate(valid_indices):
-            for j, idx_j in enumerate(valid_indices):
-                if idx_i != idx_j:
-                    similarity = similarity_matrix[i, j] * 100
-                    similarity_data[col].append({
-                        'Dokumen 1': documents[idx_i]['title'],
-                        'Dokumen 2': documents[idx_j]['title'],
-                        'Keterkaitan (%)': similarity
-                    })
-                    total_similarity_data[idx_i][idx_j] += similarity
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
 
     return similarity_data, total_similarity_data
 
-
+# Bag Of Words
 def calculate_similarity_bow(documents):
     columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
@@ -116,7 +205,82 @@ def calculate_similarity_bow(documents):
 
     return similarity_data, total_similarity_data
 
+# Bag Of Words and Tf-IDF
+def calculate_similarity_bow_tfidf(documents):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
 
+    for col in columns:
+        contents = [doc[col] for doc in documents]
+        vectorizer = TfidfVectorizer()
+        bow_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(bow_matrix, bow_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Bag Of Words and N-Gram
+def calculate_similarity_bow_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [doc[col] for doc in documents]
+        vectorizer = CountVectorizer(ngram_range=(1, n))
+        bow_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(bow_matrix, bow_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Bag Of Words and Tf-IDF + N-Gram
+def calculate_similarity_bow_tfidf_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    for col in columns:
+        contents = [doc[col] for doc in documents]
+        vectorizer = TfidfVectorizer(ngram_range=(1, n))
+        bow_matrix = vectorizer.fit_transform(contents)
+        similarity_matrix = cosine_similarity(bow_matrix, bow_matrix)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Embedding
 def calculate_similarity_word_embedding(documents):
     columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
                'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
@@ -133,6 +297,102 @@ def calculate_similarity_word_embedding(documents):
         contents = [doc[col] for doc in documents]
         vectors = [document_vector(doc) for doc in contents]
         similarity_matrix = cosine_similarity(vectors)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Embedding and Tf-IDF
+def calculate_similarity_word_embedding_tfidf(documents):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    # Load pre-trained word embeddings
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+
+    def document_vector(doc):
+        return model.encode(doc).tolist()
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(contents)  # tfidf_matrix is used to fit the vectorizer
+        embeddings = [document_vector(content) for content in contents]
+        similarity_matrix = cosine_similarity(embeddings)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Embedding and N-Gram
+def calculate_similarity_word_embedding_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    # Load pre-trained word embeddings
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+
+    def document_vector(doc):
+        return model.encode(doc).tolist()
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = CountVectorizer(ngram_range=(1, n))
+        ngram_matrix = vectorizer.fit_transform(contents)
+        embeddings = [document_vector(content) for content in contents]
+        similarity_matrix = cosine_similarity(embeddings)
+
+        for i in range(len(documents)):
+            for j in range(i + 1, len(documents)):
+                similarity = similarity_matrix[i, j] * 100
+                similarity_data[col].append({
+                    'Dokumen 1': documents[i]['title'],
+                    'Dokumen 2': documents[j]['title'],
+                    'Keterkaitan (%)': similarity
+                })
+                total_similarity_data[i][j] += similarity
+
+    return similarity_data, total_similarity_data
+
+# Word Embedding and Tf-IDF + N-Gram
+def calculate_similarity_word_embedding_tfidf_ngram(documents, n=1):
+    columns = ['pemrakarsa', 'level_peraturan', 'konten_penimbang', 'peraturan_terkait', 
+               'konten_peraturan', 'kategori_peraturan', 'topik_peraturan', 'struktur_peraturan']
+    similarity_data = {col: [] for col in columns}
+    total_similarity_data = [[0] * len(documents) for _ in range(len(documents))]
+
+    # Load pre-trained word embeddings
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+
+    def document_vector(doc):
+        return model.encode(doc).tolist()
+
+    for col in columns:
+        contents = [" ".join(doc[col].split()) for doc in documents]
+        vectorizer = TfidfVectorizer(ngram_range=(1, n))
+        tfidf_ngram_matrix = vectorizer.fit_transform(contents)
+        embeddings = [document_vector(content) for content in contents]
+        similarity_matrix = cosine_similarity(embeddings)
 
         for i in range(len(documents)):
             for j in range(i + 1, len(documents)):

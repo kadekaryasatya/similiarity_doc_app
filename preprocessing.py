@@ -17,7 +17,63 @@ nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('omw-1.4')
 
-def preprocess_text(text):
+# case folding, tokenizing
+def preprocess_text1(text):
+    # Tokenisasi
+    word_tokens = word_tokenize(text)
+    
+    # Menghapus token non-alfanumerik
+    clean_tokens = [word for word in word_tokens if word.isalnum()]
+
+    # Lowercase dan Menghapus stop words 
+    filtered_text = [word.lower() for word in clean_tokens if word.lower()]
+
+    cleaned_text = " ".join(filtered_text)
+
+    return cleaned_text
+
+# case folding, tokenizing, stemming
+def preprocess_text2(text):
+
+    # Tokenisasi
+    word_tokens = word_tokenize(text)
+    
+    # Menghapus token non-alfanumerik
+    clean_tokens = [word for word in word_tokens if word.isalnum()]
+
+    # Lowercase dan Menghapus stop words 
+    filtered_text = [word.lower() for word in clean_tokens if word.lower()]
+
+    cleaned_text = " ".join(filtered_text)
+    
+    # Stemming
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
+    stemmed_tokens = [stemmer.stem(word) for word in filtered_text]
+
+    cleaned_text = " ".join(stemmed_tokens)
+
+    return cleaned_text
+
+# case folding, tokenizing, filtering
+def preprocess_text3(text):
+    stop_words = set(stopwords.words('indonesian'))
+
+    # Tokenisasi
+    word_tokens = word_tokenize(text)
+    
+    # Menghapus token non-alfanumerik
+    clean_tokens = [word for word in word_tokens if word.isalnum()]
+
+    # Lowercase dan Menghapus stop words 
+    filtered_text = [word.lower() for word in clean_tokens if word.lower() not in stop_words]
+
+    cleaned_text = " ".join(filtered_text)
+    
+    return cleaned_text
+
+# case folding, tokenizing, filtering, stemming
+def preprocess_text4(text):
     stop_words = set(stopwords.words('indonesian'))
 
     # Tokenisasi
@@ -40,24 +96,8 @@ def preprocess_text(text):
 
     return cleaned_text
 
-
-
-def get_wordnet_pos(treebank_tag):
-    """
-    Mengubah tag treebank menjadi tag bagian dari ucapan WordNet.
-    """
-    if treebank_tag.startswith('J'):
-        return wordnet.ADJ
-    elif treebank_tag.startswith('V'):
-        return wordnet.VERB
-    elif treebank_tag.startswith('N'):
-        return wordnet.NOUN
-    elif treebank_tag.startswith('R'):
-        return wordnet.ADV
-    else:
-        return None
-
-def preprocess_text_new(text):
+# part of speech, lemmatization, chunking
+def preprocess_text5(text):
     # Tokenisasi
     word_tokens = word_tokenize(text)
     
@@ -90,6 +130,21 @@ def preprocess_text_new(text):
     
     return processed_text
 
+def get_wordnet_pos(treebank_tag):
+    """
+    Mengubah tag treebank menjadi tag bagian dari ucapan WordNet.
+    """
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return None
+
 def pdf_to_text(file):
     doc = fitz.open(stream=file.read(), filetype="pdf")
     
@@ -97,12 +152,11 @@ def pdf_to_text(file):
     for page in doc:
         text += page.get_text()
     
+    # Tokenisasi
     word_tokens = word_tokenize(text)
     
-    clean_tokens = [word for word in word_tokens if word.isalnum()]
-
-    filtered_text = [word for word in clean_tokens]
-
-    cleaned_text = " ".join(filtered_text)
+    filtered_tokens = [word for word in word_tokens if word.isalnum() or '-' in word]
+    
+    cleaned_text = " ".join(filtered_tokens)
 
     return cleaned_text
