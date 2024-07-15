@@ -4,6 +4,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 
+# Function to calculate total similarity
+def calculate_total_similarity(total_similarity_data, num_columns):
+    total_similarities = []
+    num_samples = len(total_similarity_data)
+    for i in range(num_samples):
+        for j in range(i + 1, num_samples):
+            total_similarity = total_similarity_data[i][j] / num_columns
+            total_similarities.append(total_similarity)
+    return total_similarities
 
 # Tf-IDF
 def calculate_similarity_tfidf(documents):

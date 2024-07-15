@@ -7,7 +7,7 @@ from nltk.chunk import ne_chunk
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-import re
+import pdfkit
 
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
@@ -160,3 +160,29 @@ def pdf_to_text(file):
     cleaned_text = " ".join(filtered_tokens)
 
     return cleaned_text
+
+def preprocess_documents(documents, preprocess_func):
+    preprocessed_documents = []
+    for doc in documents:
+        preprocessed_doc = {
+            'title': doc['title'],
+            'pemrakarsa': preprocess_func(doc['pemrakarsa']),
+            'level_peraturan': preprocess_func(doc['level_peraturan']),
+            'konten_penimbang': preprocess_func(doc['konten_penimbang']),
+            'peraturan_terkait': preprocess_func(doc['peraturan_terkait']),
+            'konten_peraturan': preprocess_func(doc['konten_peraturan']),
+            'kategori_peraturan': preprocess_func(doc['kategori_peraturan']),
+            'topik_peraturan': preprocess_func(doc['topik_peraturan']),
+            'struktur_peraturan': preprocess_func(doc['struktur_peraturan'])
+        }
+        preprocessed_documents.append(preprocessed_doc)
+    return preprocessed_documents
+
+def convert_df_to_pdf(df_styled_html):
+    # Tentukan jalur ke eksekutif wkhtmltopdf secara eksplisit
+    path_to_wkhtmltopdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'
+    config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+    
+    # Konversi DataFrame ke PDF
+    pdf_output = pdfkit.from_string(df_styled_html, False, configuration=config)
+    return pdf_output
