@@ -11,6 +11,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import pdfkit
 import tempfile
+import base64
 
 st.set_page_config(page_title="Similarity Docs Apps",
                    page_icon="📃", layout="wide")
@@ -98,6 +99,7 @@ def convert_html_to_pdf(html_content, output_path):
     config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
     pdfkit.from_string(html_content, output_path, configuration=config)
 
+
 def similarity_page():
     st.title("Keterkaitan Dokumen")
     
@@ -114,7 +116,6 @@ def similarity_page():
 
     n_value = 2  
     if num_samples > 2:
-        # num_clusters = st.number_input("Jumlah Cluster", min_value=2, max_value=num_samples-1, value=2, step=1)
         num_cluster = 2
 
     st.markdown("<h5 style='text-align:center;'>", unsafe_allow_html=True)
@@ -128,19 +129,19 @@ def similarity_page():
         similarity_methods = {
             "TF-IDF": calculate_similarity_tfidf,
             "TF-IDF + N-Gram": lambda docs: calculate_similarity_tfidf_ngram(docs, n=n_value),
-            # "N-Gram": lambda docs: calculate_similarity_ngram(docs, n=n_value),
-            # "Word Count": calculate_similarity_word_count,
-            # "Word Count (TF-IDF)": calculate_similarity_word_count_tfidf,
-            # "Word Count (N-Gram)": lambda docs: calculate_similarity_word_count_ngram(docs, n=n_value),
-            # "Word Count (TF-IDF + N-Gram)": lambda docs: calculate_similarity_word_count_tfidf_ngram(docs, n=n_value),
-            # "Bag of Words": calculate_similarity_bow,
-            # "Bag of Words (TF-IDF)": lambda docs: calculate_similarity_bow_tfidf(docs),
-            # "Bag of Words (N-Gram)": lambda docs: calculate_similarity_bow_ngram(docs, n=n_value),
-            # "Bag of Words (TF-IDF + N-Gram)": lambda docs: calculate_similarity_bow_tfidf_ngram(docs, n=n_value),
-            # "Word Embedding": calculate_similarity_word_embedding,
-            # "Word Embedding (TF-IDF)": lambda docs: calculate_similarity_word_embedding_tfidf(docs),
-            # "Word Embedding (N-Gram)": lambda docs: calculate_similarity_word_embedding_ngram(docs, n=n_value),
-            # "Word Embedding (TF-IDF + N-Gram)": lambda docs: calculate_similarity_word_embedding_tfidf_ngram(docs, n=n_value)
+            "N-Gram": lambda docs: calculate_similarity_ngram(docs, n=n_value),
+            "Word Count": calculate_similarity_word_count,
+            "Word Count (TF-IDF)": calculate_similarity_word_count_tfidf,
+            "Word Count (N-Gram)": lambda docs: calculate_similarity_word_count_ngram(docs, n=n_value),
+            "Word Count (TF-IDF + N-Gram)": lambda docs: calculate_similarity_word_count_tfidf_ngram(docs, n=n_value),
+            "Bag of Words": calculate_similarity_bow,
+            "Bag of Words (TF-IDF)": lambda docs: calculate_similarity_bow_tfidf(docs),
+            "Bag of Words (N-Gram)": lambda docs: calculate_similarity_bow_ngram(docs, n=n_value),
+            "Bag of Words (TF-IDF + N-Gram)": lambda docs: calculate_similarity_bow_tfidf_ngram(docs, n=n_value),
+            "Word Embedding": calculate_similarity_word_embedding,
+            "Word Embedding (TF-IDF)": lambda docs: calculate_similarity_word_embedding_tfidf(docs),
+            "Word Embedding (N-Gram)": lambda docs: calculate_similarity_word_embedding_ngram(docs, n=n_value),
+            "Word Embedding (TF-IDF + N-Gram)": lambda docs: calculate_similarity_word_embedding_tfidf_ngram(docs, n=n_value)
         }
 
         preprocess_titles = [
@@ -159,58 +160,62 @@ def similarity_page():
             preprocess_text5
         ]
         
-        similarity_results = {method: [] for method in similarity_methods}
-        total_similarity_results = {method: [] for method in similarity_methods}
+        tab_names = list(similarity_methods.keys())
+        tabs = st.tabs(tab_names)
+        
+        for i, method_name in enumerate(tab_names):
+            with tabs[i]:
+                st.subheader(method_name)
 
-        for method_name, method_func in similarity_methods.items():
-            preprocessed_documents = []
-            for preprocess_func in preprocess_functions:
-                preprocessed_documents.append(preprocess_documents(documents, preprocess_func))
+                similarity_data = {preprocess_titles[k]: {} for k in range(len(preprocess_functions))}
+                total_similarity_data = []
 
-            for preprocessed_docs in preprocessed_documents:
-                similarity_data, total_similarity_data = method_func(preprocessed_docs)
-                similarity_results[method_name].append(similarity_data)
-                total_similarity_results[method_name].append(total_similarity_data)
+                preprocessed_documents = []
+                for preprocess_func in preprocess_functions:
+                    preprocessed_documents.append(preprocess_documents(documents, preprocess_func))
 
-        all_html_content = ""
+                for k, preprocessed_docs in enumerate(preprocessed_documents):
+                    similarity_data_method, total_similarity_data_method = similarity_methods[method_name](preprocessed_docs)
+                    similarity_data[preprocess_titles[k]] = similarity_data_method
+                    total_similarity_data.append(total_similarity_data_method)
 
-        for i in range(num_samples):
-            for j in range(i + 1, num_samples):
-                doc1 = documents[i]['title']
-                doc2 = documents[j]['title']
+                all_html_content = ""
 
-                st.write(f"Document 1 : {doc1}")
-                st.write(f"Document 2 : {doc2}")
+                for i in range(num_samples):
+                    for j in range(i + 1, num_samples):
+                        doc1 = documents[i]['title']
+                        doc2 = documents[j]['title']
 
-                tab_names = list(similarity_methods.keys())
-                tabs = st.tabs(tab_names)
+                        st.write(f"Document 1 : {doc1}")
+                        st.write(f"Document 2 : {doc2}")
 
-                for method_index, method_name in enumerate(tab_names):
-                    with tabs[method_index]:
-                        st.subheader(method_name)
-
-                        similarity_data = {preprocess_titles[k]: {} for k in range(len(preprocess_functions))}
+                        similarity_data_per_doc = {preprocess_titles[k]: {} for k in range(len(preprocess_functions))}
 
                         index = i * num_samples + j - ((i + 1) * (i + 2)) // 2
                         valid_index = True
                         for k in range(len(preprocess_functions)):
-                            if index >= len(similarity_results[method_name][k][columns[0]]):
-                                st.write(f"Indeks di luar jangkauan untuk pra-pemrosesan {k+1}, indeks {index}")
+                            try:
+                                if index >= len(similarity_data[preprocess_titles[k]][columns[0]]):
+                                    st.write(f"Indeks di luar jangkauan untuk pra-pemrosesan {k+1}, indeks {index}")
+                                    valid_index = False
+                                    break
+                            except KeyError:
+                                st.write(f"KeyError: Pra-pemrosesan {k+1} tidak memiliki data untuk kolom {columns[0]}")
                                 valid_index = False
                                 break
 
                         if valid_index:
                             for col in columns:
                                 for k in range(len(preprocess_functions)):
-                                    similarity_data[preprocess_titles[k]][col] = similarity_results[method_name][k][col][index]['Keterkaitan (%)']
+                                    similarity_data_per_doc[preprocess_titles[k]][col] = similarity_data[preprocess_titles[k]][col][index]['Keterkaitan (%)']
 
-                            df = pd.DataFrame(similarity_data)
+                            df = pd.DataFrame(similarity_data_per_doc)
 
                             if not df.empty:
                                 df.index = columns
 
                                 total_similarity_row = pd.Series({
-                                    preprocess_titles[k]: total_similarity_results[method_name][k][i][j] / len(columns)
+                                    preprocess_titles[k]: total_similarity_data[k][i][j] / len(columns)
                                     for k in range(len(preprocess_functions))
                                 }, name='Total Keterkaitan (%)')
 
@@ -225,80 +230,68 @@ def similarity_page():
                                 df_styled_html = df_styled.to_html()
                                 all_html_content += f"<h2>{method_name}</h2><h3>Document 1: {doc1}</h3><h3>Document 2: {doc2}</h3>" + df_styled_html
 
-                                pdf_data = convert_df_to_pdf(all_html_content)
-                                # st.download_button(label="Unduh sebagai PDF", data=pdf_data, file_name="similarity.pdf", mime='application/pdf', key=f"download_button_{i}_{j}")
-
                             else:
                                 st.write("DataFrame kosong, tidak bisa mengatur indeks")
                         else:
                             st.write("Indeks di luar jangkauan, tidak bisa membuat DataFrame untuk pasangan dokumen ini.")
 
+                if num_samples == 2:
+                    st.warning("Clustering tidak dapat dilakukan dengan hanya dua dokumen. Silakan tambahkan lebih banyak dokumen.")
+                else:
+                    combined_contents = [
+                        doc['pemrakarsa'] + " " + doc['level_peraturan'] + " " + doc['konten_penimbang'] + " " + 
+                        doc['peraturan_terkait'] + " " + doc['konten_peraturan'] + " " + doc['kategori_peraturan'] + " " +
+                        doc['topik_peraturan'] + " " + doc['struktur_peraturan']
+                        for doc in documents
+                    ]
 
-                
-            #     if num_samples == 2:
-            #         st.warning("Clustering tidak dapat dilakukan dengan hanya dua dokumen. Silakan tambahkan lebih banyak dokumen.")
-            #     else:
-            #         combined_contents = [
-            #             doc['pemrakarsa'] + " " + doc['level_peraturan'] + " " + doc['konten_penimbang'] + " " + 
-            #             doc['peraturan_terkait'] + " " + doc['konten_peraturan'] + " " + doc['kategori_peraturan'] + " " +
-            #             doc['topik_peraturan'] + " " + doc['struktur_peraturan']
-            #             for doc in documents
-            #         ]
+                    if method_name == "Word Embedding":
+                        model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+                        embeddings = np.array([model.encode(content) for content in combined_contents])
+                        similarity_matrix = cosine_similarity(embeddings)
+                    else:
+                        if method_name == "TF-IDF":
+                            vectorizer = TfidfVectorizer()
+                        elif method_name == "Word Count":
+                            vectorizer = CountVectorizer()
+                        elif method_name == "N-Gram" or method_name == "TF-IDF + N-Gram":
+                            vectorizer = CountVectorizer(ngram_range=(1, n_value))
+                        elif method_name.startswith("Bag of Words"):
+                            if "TF-IDF" in method_name:
+                                vectorizer = TfidfVectorizer(use_idf=True)
+                            elif "N-Gram" in method_name:
+                                vectorizer = CountVectorizer(ngram_range=(1, n_value))
+                            else:
+                                vectorizer = CountVectorizer()
 
-            #         if method_name == "Word Embedding":
-            #             model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-            #             embeddings = np.array([model.encode(content) for content in combined_contents])
-            #             similarity_matrix = cosine_similarity(embeddings)
-            #         else:
-            #             if method_name == "TF-IDF":
-            #                 vectorizer = TfidfVectorizer()
-            #             elif method_name == "Word Count":
-            #                 vectorizer = CountVectorizer()
-            #             elif method_name == "N-Gram" or method_name == "TF-IDF + N-Gram":
-            #                 vectorizer = CountVectorizer(ngram_range=(1, n_value))
-            #             elif method_name.startswith("Bag of Words"):
-            #                 if "TF-IDF" in method_name:
-            #                     vectorizer = TfidfVectorizer(use_idf=True)
-            #                 elif "N-Gram" in method_name:
-            #                     vectorizer = CountVectorizer(ngram_range=(1, n_value))
-            #                 else:
-            #                     vectorizer = CountVectorizer()
+                        tfidf_matrix = vectorizer.fit_transform(combined_contents)
+                        similarity_matrix = cosine_similarity(tfidf_matrix)
 
-            #             tfidf_matrix = vectorizer.fit_transform(combined_contents)
-            #             similarity_matrix = cosine_similarity(tfidf_matrix)
-
-            #         silhouette_avg, labels = perform_clustering(similarity_matrix, 2)  # Default to 2 clusters
+                    silhouette_avg, labels = perform_clustering(similarity_matrix, 2)  # Default to 2 clusters
                     
-            #         st.divider()
+                    st.subheader("Clustering")
 
-            #         st.subheader("Clustering")
+                    st.write(f"Silhouette Coefficient: {silhouette_avg}")
 
-            #         st.write(f"Silhouette Coefficient: {silhouette_avg}")
-
-            #         cluster_data = {f"Cluster {i + 1}": [] for i in range(2)}
-            #         for cluster_id in range(2):
-            #             cluster_docs = [documents[i]['title'] for i, label in enumerate(labels) if label == cluster_id]
-            #             cluster_data[f"Cluster {cluster_id + 1}"] = cluster_docs
+                    cluster_data = {f"Cluster {i + 1}": [] for i in range(2)}
+                    for cluster_id in range(2):
+                        cluster_docs = [documents[i]['title'] for i, label in enumerate(labels) if label == cluster_id]
+                        cluster_data[f"Cluster {cluster_id + 1}"] = cluster_docs
                     
-            #         cluster_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in cluster_data.items()])).fillna('')
-            #         cluster_styler = cluster_df.style.set_properties(**{'text-align': 'center'}).hide(axis='index')
-            #         st.write(cluster_styler.to_html(), unsafe_allow_html=True)
-              
-            # st.markdown("</h5>", unsafe_allow_html=True)
+                    cluster_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in cluster_data.items()])).fillna('')
+                    cluster_styler = cluster_df.style.set_properties(**{'text-align': 'center'}).hide(axis='index')
+                    st.write(cluster_styler.to_html(), unsafe_allow_html=True)
 
-        if all_html_content:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-                convert_html_to_pdf(all_html_content, tmp_file.name)
-                pdf_data = tmp_file.read()
+                if all_html_content:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                        convert_html_to_pdf(all_html_content, tmp_file.name)
+                        st.markdown("<br>", unsafe_allow_html=True)  # Space above the download button
+                        
+                    st.markdown("<div style='text-align:right'>", unsafe_allow_html=True)
+                    st.markdown(f'<a href="data:application/pdf;base64,{base64.b64encode(open(tmp_file.name, "rb").read()).decode()}" target="_blank" download="similarity_{method_name}.pdf">Download PDF</a>', unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-            st.download_button(
-                label="Unduh Semua Sebagai PDF",
-                data=pdf_data,
-                file_name="all_similarity_results.pdf",
-                mime='application/pdf',
-                key="download_button_all"
-            )
-        
+       
 def navigation():
     st.sidebar.title("Navigasi")
     if st.sidebar.button("Home"):
