@@ -53,20 +53,19 @@ def extract_details(text):
         "ketenagakerjaan": ["tenaga kerja", "upah", "keamanan kerja", "hak-hak pekerja", "serikat pekerja", "perlindungan sosial"],
         "perpajakan": ["pajak penghasilan", "pajak pertambahan nilai", "tarif pajak", "penghindaran pajak", "insentif pajak"],
         "investasi": ["pasar modal", "saham", "obligasi", "regulasi investasi", "perlindungan investor", "modal ventura"],
-        "transportasi": ["jalan", "transportasi umum", "kendaraan bermotor", "bandara", "pelabuhan", "transportasi massal"],
+        "transportasi": ["angkutan","jalan", "transportasi umum", "kendaraan bermotor", "bandara", "pelabuhan", "transportasi massal"],
         "keuangan": ["perbankan", "asuransi", "pasar keuangan", "regulasi keuangan", "inflasi", "suku bunga", "kebijakan moneter"]
     }
 
-    topik_peraturan_text = None
+    frekuensi_topik = {topik: 0 for topik in topik_kata_kunci}
+
     for topik, kata_kunci in topik_kata_kunci.items():
         for kata in kata_kunci:
-            if kata in text.lower():
-                topik_peraturan_text = topik
-                break
-        if topik_peraturan_text:
-            break
+            frekuensi_topik[topik] += text.count(kata)
 
-    if topik_peraturan_text is None:
+    topik_peraturan_text = max(frekuensi_topik, key=frekuensi_topik.get)
+
+    if frekuensi_topik[topik_peraturan_text] == 0:
         topik_peraturan_text = "Topik tidak ditemukan"
     
     judul =  extract_title(text)
